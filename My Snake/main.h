@@ -25,6 +25,8 @@ enum difficulty {
 void gotoxy(struct position pos);
 
 void draw_frame();
+void draw_main_menu();
+void draw_game_over();
 void draw_snake();
 void draw_score();
 void update_and_redraw_score();
@@ -38,3 +40,10 @@ void calculate_time();
 void check_collision_with_apple();
 void check_collision_with_frame();
 void check_collision_with_snake();
+
+void change_game_state(enum game_state state);
+void change_difficulty(enum difficulty dif);
+void main_menu();
+void game();
+void game_over();
+

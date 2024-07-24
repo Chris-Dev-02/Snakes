@@ -13,14 +13,16 @@ struct position apple = {10, 10};
 
 enum direction direction = LEFT; 
 
-int sleep_time = 100;
+int sleep_time = 80;
 float seconds = 0.0;
 int snake_lenght = 1;
 
 bool is_game_over = false;  //LEGACY
 enum game_state var_game_state = MAIN_MENU;
+enum difficulty var_difficulty = EASY;
 bool is_program_running = true;
 bool first_frame = true;
+bool redraw_frame = false;
 int score = 0;
 
 void gotoxy(struct position pos)
@@ -61,15 +63,27 @@ void draw_frame(){
 }
 
 void draw_main_menu(){
-    struct position menu_letters_pos = {lower_limit.x / 2 - 5, lower_limit.y / 2};
+    struct position menu_letters_pos = {(lower_limit.x / 2) - 5, (lower_limit.y / 2)};
     gotoxy(menu_letters_pos);
     printf("S N A K E");
+    struct position d1_letters_pos = {(lower_limit.x / 2) - 15, (lower_limit.y / 2) + 2};
+    gotoxy(d1_letters_pos);
+    printf("Press \"1\" to play in easy mode");
+    struct position d2_letters_pos = {(lower_limit.x / 2) - 16, (lower_limit.y / 2) + 3};
+    gotoxy(d2_letters_pos);
+    printf("Press \"2\" to play in medium mode");
+    struct position d3_letters_pos = {(lower_limit.x / 2) - 15, (lower_limit.y / 2) + 4};
+    gotoxy(d3_letters_pos);
+    printf("Press \"3\" to play in hard mode");
 }
 
 void draw_game_over(){
-    struct position menu_letters_pos = {lower_limit.x / 2 - 8, lower_limit.y / 2};
+    struct position menu_letters_pos = {(lower_limit.x) / 2 - 8, (lower_limit.y) / 2};
     gotoxy(menu_letters_pos);
     printf("G A M E   O V E R");
+    struct position continue_letters_pos = {(lower_limit.x / 2) - 12, (lower_limit.y / 2) + 2};
+    gotoxy(continue_letters_pos);
+    printf("Press \"space\" to restart");
 }
 
 void draw_snake(){
@@ -118,8 +132,8 @@ void draw_new_apple(){
 
 // General
 void erase_snake(){
-    /*
-        for(int i = 0; i < snake_lenght; i++){
+    
+    /*for(int i = 0; i < snake_lenght - 1; i++){
         gotoxy(snake[i]);
         printf(" ");
     }*/
@@ -143,7 +157,32 @@ void read_keyboard(){
                     case MAIN_MENU: change_game_state(GAME); break;
                     case GAME_OVER: change_game_state(MAIN_MENU); break;
                 }
+                change_difficulty(MEDIUM);
                 break; // SPACE detection
+            case 49: 
+                switch (var_game_state)
+                {
+                    case MAIN_MENU: change_game_state(GAME); break;
+                    case GAME_OVER: change_game_state(MAIN_MENU); break;
+                }
+                change_difficulty(EASY);
+                break;
+            case 50: 
+                switch (var_game_state)
+                {
+                    case MAIN_MENU: change_game_state(GAME); break;
+                    case GAME_OVER: change_game_state(MAIN_MENU); break;
+                }
+                change_difficulty(MEDIUM);
+                break;
+            case 51: 
+                switch (var_game_state)
+                {
+                    case MAIN_MENU: change_game_state(GAME); break;
+                    case GAME_OVER: change_game_state(MAIN_MENU); break;
+                }
+                change_difficulty(HARD);
+                break;
             case 27: is_program_running = false; break; // ESC detection
         }  
     }  
@@ -191,13 +230,34 @@ void check_collision_with_apple(){
 }
 
 void check_collision_with_frame(){
-    if(snake[0].x == upper_limit.x || snake[0].x == lower_limit.x){
-        //is_game_over = true;
-        change_game_state(GAME_OVER);
+
+    if(var_difficulty == EASY){
+        if (snake[0].x >= lower_limit.x){
+            snake[0].x = upper_limit.x + 2;
+            redraw_frame = true;
+        }  
+        else if(snake[0].x <= upper_limit.x + 1){
+            snake[0].x = lower_limit.x - 1;
+            redraw_frame = true;
+        }
+        if (snake[0].y >= lower_limit.y){
+            snake[0].y = upper_limit.y + 2;
+            redraw_frame = true;
+        }
+        else if (snake[0].y <= upper_limit.y + 1) {
+            snake[0].y = lower_limit.y - 1;
+            redraw_frame = true;
+        }
     }
-    if(snake[0].y == upper_limit.y + 1 || snake[0].y == lower_limit.y){
-        //is_game_over = true;
-        change_game_state(GAME_OVER);
+    else{
+        if(snake[0].x == upper_limit.x + 1 || snake[0].x == lower_limit.x){
+            //is_game_over = true;
+            change_game_state(GAME_OVER);
+        }
+        if(snake[0].y == upper_limit.y + 1 || snake[0].y == lower_limit.y){
+            //is_game_over = true;
+            change_game_state(GAME_OVER);
+        }
     }
 }
 
@@ -217,6 +277,22 @@ void change_game_state(enum game_state state){
     var_game_state = state;
 }
 
+void change_difficulty(enum difficulty dif){
+    var_difficulty = dif;
+    switch (var_difficulty)
+    {
+    case EASY:
+        sleep_time = 130;
+        break;
+    case MEDIUM:
+        sleep_time = 100;
+        break;
+    case HARD:
+        sleep_time = 70;
+        break;
+    }
+}
+
 void main_menu(){
     if(first_frame){
         system("cls");
@@ -234,22 +310,41 @@ void game(){
     if(first_frame){
         system("cls");
         snake[0] = snake_init_pos;
+        snake_lenght = 1;
+        seconds = 0.0;
+        score = 0;
         draw_frame();
         draw_score();
         draw_new_apple();
         first_frame = false;
     }
 
+    if(redraw_frame){
+        draw_frame();
+        redraw_frame = false;
+    }
     erase_snake();
     read_keyboard();
+    check_collision_with_frame();
     check_collision_with_snake();
     check_collision_with_apple();
-    check_collision_with_frame();
     move_snake();
     draw_snake();
     update_and_redraw_score();
     Sleep(sleep_time);
     calculate_time();
+    /*
+    erase_snake();
+    read_keyboard();
+    check_collision_with_frame();
+    check_collision_with_snake();
+    check_collision_with_apple();
+    move_snake();
+    draw_snake();
+    update_and_redraw_score();
+    Sleep(sleep_time);
+    calculate_time();
+    */
 }
 
 void game_over(){
@@ -266,7 +361,6 @@ void game_over(){
 
 
 int main(){
-
     while(is_program_running){
         switch (var_game_state)
         {
