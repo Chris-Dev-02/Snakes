@@ -5,17 +5,22 @@
 #include <windows.h>
 #include "main.h"
 
-//╚╝╔╗╣╠║═
 struct position snake[101];
 struct position snake_init_pos = {40, 10};
 struct position upper_limit = {0, 0};
 struct position lower_limit = {80, 20};
 struct position apple = {10, 10};
+
 enum direction direction = LEFT; 
+
 int sleep_time = 100;
 float seconds = 0.0;
 int snake_lenght = 1;
-bool game_over = false;
+
+bool is_game_over = false;  //LEGACY
+enum game_state var_game_state = MAIN_MENU;
+bool is_program_running = true;
+bool first_frame = true;
 int score = 0;
 
 void gotoxy(struct position pos)
@@ -55,14 +60,28 @@ void draw_frame(){
     printf("%c", 188);
 }
 
+void draw_main_menu(){
+    struct position menu_letters_pos = {lower_limit.x / 2 - 5, lower_limit.y / 2};
+    gotoxy(menu_letters_pos);
+    printf("S N A K E");
+}
+
+void draw_game_over(){
+    struct position menu_letters_pos = {lower_limit.x / 2 - 8, lower_limit.y / 2};
+    gotoxy(menu_letters_pos);
+    printf("G A M E   O V E R");
+}
+
 void draw_snake(){
     for(int i = 0; i < snake_lenght; i++){
         gotoxy(snake[i]);
         if(i == 0){
-            game_over ? printf("X") : printf("@");
+            //is_game_over ? printf("X") : printf("@");
+            var_game_state == GAME_OVER ? printf("X") : printf("@");
         }
         else{
-            game_over ? printf("+") : printf("*");
+            //is_game_over ? printf("+") : printf("*");
+            var_game_state == GAME_OVER ? printf("+") : printf("*");
         }
     }
 }
@@ -85,12 +104,11 @@ void update_and_redraw_score(){
     printf("%.f", seconds);
 }
 
-// General
 void draw_new_apple(){
-    apple.x = rand() % (lower_limit.x - upper_limit.x + 1) + upper_limit.x;
-    apple.y = rand() % (lower_limit.y - upper_limit.y + 1) + upper_limit.y;
+    apple.x = rand() % (lower_limit.x - upper_limit.x + 2) + upper_limit.x;
+    apple.y = rand() % (lower_limit.y - upper_limit.y + 2) + upper_limit.y;
 
-    if(apple.x == 0 || apple.y == 0 || apple.x == lower_limit.x || apple.y == lower_limit.y){
+    if(apple.x == upper_limit.x || apple.y == upper_limit.y || apple.x == lower_limit.x || apple.y == lower_limit.y){
         return draw_new_apple();
     }
 
@@ -98,6 +116,7 @@ void draw_new_apple(){
     printf("%c", 224);
 }
 
+// General
 void erase_snake(){
     /*
         for(int i = 0; i < snake_lenght; i++){
@@ -112,17 +131,27 @@ void erase_snake(){
 void read_keyboard(){
     if (_kbhit()) {
         switch (_getch()){
+            // Gameplay
             case 'w': direction = UP; break;
             case 'a': direction = LEFT; break;
             case 's': direction = DOWN; break;
             case 'd': direction = RIGHT; break;
+            // Flow control
+            case 32: 
+                switch (var_game_state)
+                {
+                    case MAIN_MENU: change_game_state(GAME); break;
+                    case GAME_OVER: change_game_state(MAIN_MENU); break;
+                }
+                break; // SPACE detection
+            case 27: is_program_running = false; break; // ESC detection
         }  
     }  
 }
 
 void move_snake(){
-    if(!game_over){
-        struct position aux_1, aux_2;
+    if(var_game_state == GAME){
+    //if(!is_game_over){
         for(int i = snake_lenght - 1; i > 0; i--){
             snake[i] = snake[i - 1];
         }
@@ -163,27 +192,107 @@ void check_collision_with_apple(){
 
 void check_collision_with_frame(){
     if(snake[0].x == upper_limit.x || snake[0].x == lower_limit.x){
-        game_over = true;
+        //is_game_over = true;
+        change_game_state(GAME_OVER);
     }
-    if(snake[0].y == upper_limit.y || snake[0].y == lower_limit.y){
-        game_over = true;
+    if(snake[0].y == upper_limit.y + 1 || snake[0].y == lower_limit.y){
+        //is_game_over = true;
+        change_game_state(GAME_OVER);
     }
 }
 
 void check_collision_with_snake(){
     for (int i = 1; i < snake_lenght; i++) {
         if (snake[i].x == snake[0].x && snake[i].y == snake[0].y)
-            game_over = true;
+            //is_game_over = true;
+            //first_frame = true;
+            //var_game_state = 2;
+            change_game_state(GAME_OVER);
     }
 }
 
+// Game state handle functions
+void change_game_state(enum game_state state){
+    first_frame = true;
+    var_game_state = state;
+}
+
+void main_menu(){
+    if(first_frame){
+        system("cls");
+        draw_frame();
+        draw_main_menu();
+        first_frame = false;
+    }
+
+    read_keyboard();
+    Sleep(sleep_time);
+}
+
+void game(){
+    
+    if(first_frame){
+        system("cls");
+        snake[0] = snake_init_pos;
+        draw_frame();
+        draw_score();
+        draw_new_apple();
+        first_frame = false;
+    }
+
+    erase_snake();
+    read_keyboard();
+    check_collision_with_snake();
+    check_collision_with_apple();
+    check_collision_with_frame();
+    move_snake();
+    draw_snake();
+    update_and_redraw_score();
+    Sleep(sleep_time);
+    calculate_time();
+}
+
+void game_over(){
+    if(first_frame){
+        //system("cls");
+        //draw_frame();
+        draw_game_over();
+        first_frame = false;
+    }
+
+    read_keyboard();
+    Sleep(sleep_time);
+}
+
+
+int main(){
+
+    while(is_program_running){
+        switch (var_game_state)
+        {
+        case MAIN_MENU:
+            main_menu();
+            break;
+        case GAME:
+            game();
+            break;
+        case GAME_OVER:
+            game_over();
+            break;
+        }
+    }
+
+    return 0;
+}
+
+/*
 int main()
 {
     snake[0] = snake_init_pos;
     draw_frame();
     draw_score();
     draw_new_apple();
-    while(!game_over){
+    while(!is_game_over){
         erase_snake();
         read_keyboard();
         check_collision_with_frame();
@@ -197,6 +306,7 @@ int main()
     }
 
     return 0;
-}
+}*/
+
 
 
