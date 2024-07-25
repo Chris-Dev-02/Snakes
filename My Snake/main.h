@@ -30,12 +30,13 @@ void draw_game_over();
 void draw_snake();
 void draw_score();
 void update_and_redraw_score();
-void draw_new_apple();
+void draw_apple();
 
 void erase_snake();
 void read_keyboard();
 void move_snake();
 void calculate_time();
+void create_new_apple();
 
 void check_collision_with_apple();
 void check_collision_with_frame();

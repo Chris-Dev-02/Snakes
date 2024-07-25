@@ -63,26 +63,26 @@ void draw_frame(){
 }
 
 void draw_main_menu(){
-    struct position menu_letters_pos = {(lower_limit.x / 2) - 5, (lower_limit.y / 2)};
-    gotoxy(menu_letters_pos);
+    struct position pos_1 = {(lower_limit.x / 2) - 5, (lower_limit.y / 2)};
+    gotoxy(pos_1);
     printf("S N A K E");
-    struct position d1_letters_pos = {(lower_limit.x / 2) - 15, (lower_limit.y / 2) + 2};
-    gotoxy(d1_letters_pos);
+    struct position pos_2 = {(lower_limit.x / 2) - 15, (lower_limit.y / 2) + 2};
+    gotoxy(pos_2);
     printf("Press \"1\" to play in easy mode");
-    struct position d2_letters_pos = {(lower_limit.x / 2) - 16, (lower_limit.y / 2) + 3};
-    gotoxy(d2_letters_pos);
+    struct position pos_3 = {(lower_limit.x / 2) - 16, (lower_limit.y / 2) + 3};
+    gotoxy(pos_3);
     printf("Press \"2\" to play in medium mode");
-    struct position d3_letters_pos = {(lower_limit.x / 2) - 15, (lower_limit.y / 2) + 4};
-    gotoxy(d3_letters_pos);
+    struct position pos_4 = {(lower_limit.x / 2) - 15, (lower_limit.y / 2) + 4};
+    gotoxy(pos_4);
     printf("Press \"3\" to play in hard mode");
 }
 
 void draw_game_over(){
-    struct position menu_letters_pos = {(lower_limit.x) / 2 - 8, (lower_limit.y) / 2};
-    gotoxy(menu_letters_pos);
+    struct position pos_1 = {(lower_limit.x) / 2 - 8, (lower_limit.y) / 2};
+    gotoxy(pos_1);
     printf("G A M E   O V E R");
-    struct position continue_letters_pos = {(lower_limit.x / 2) - 12, (lower_limit.y / 2) + 2};
-    gotoxy(continue_letters_pos);
+    struct position pos_2 = {(lower_limit.x / 2) - 12, (lower_limit.y / 2) + 2};
+    gotoxy(pos_2);
     printf("Press \"space\" to restart");
 }
 
@@ -118,14 +118,7 @@ void update_and_redraw_score(){
     printf("%.f", seconds);
 }
 
-void draw_new_apple(){
-    apple.x = rand() % (lower_limit.x - upper_limit.x + 2) + upper_limit.x;
-    apple.y = rand() % (lower_limit.y - upper_limit.y + 2) + upper_limit.y;
-
-    if(apple.x == upper_limit.x || apple.y == upper_limit.y || apple.x == lower_limit.x || apple.y == lower_limit.y){
-        return draw_new_apple();
-    }
-
+void draw_apple(){
     gotoxy(apple);
     printf("%c", 224);
 }
@@ -219,11 +212,24 @@ void calculate_time(){
     seconds = seconds + (sleep_time / 1000.0);
 }
 
+void create_new_apple(){
+    int N = lower_limit.x - 1;
+    int M = upper_limit.x + 1;
+    apple.x = rand() % (N - M + 1) + M;
+    N = lower_limit.y - 1;
+    M = upper_limit.y + 1;
+    apple.y = rand() % (N - M + 1) + M;
+
+    if(apple.x == upper_limit.x || apple.y == upper_limit.y || apple.x == lower_limit.x || apple.y == lower_limit.y){
+        return create_new_apple();
+    }
+}
+
 // Collision functions
 void check_collision_with_apple(){
     if(snake[0].x == apple.x && snake[0].y == apple.y){
         snake[snake_lenght + 1] = snake[snake_lenght];
-        draw_new_apple();
+        create_new_apple();
         score += 1;
         snake_lenght++;
     }
@@ -315,7 +321,7 @@ void game(){
         score = 0;
         draw_frame();
         draw_score();
-        draw_new_apple();
+        create_new_apple();
         first_frame = false;
     }
 
@@ -330,21 +336,10 @@ void game(){
     check_collision_with_apple();
     move_snake();
     draw_snake();
+    draw_apple();
     update_and_redraw_score();
     Sleep(sleep_time);
     calculate_time();
-    /*
-    erase_snake();
-    read_keyboard();
-    check_collision_with_frame();
-    check_collision_with_snake();
-    check_collision_with_apple();
-    move_snake();
-    draw_snake();
-    update_and_redraw_score();
-    Sleep(sleep_time);
-    calculate_time();
-    */
 }
 
 void game_over(){
@@ -385,7 +380,7 @@ int main()
     snake[0] = snake_init_pos;
     draw_frame();
     draw_score();
-    draw_new_apple();
+    create_new_apple();
     while(!is_game_over){
         erase_snake();
         read_keyboard();
@@ -394,6 +389,7 @@ int main()
         check_collision_with_apple();
         move_snake();
         draw_snake();
+        draw_apple();
         update_and_redraw_score();
         Sleep(sleep_time);
         calculate_time();
